@@ -172,7 +172,7 @@ VirtualProtect(pytransform_base+patch_offset, num_nops, oldprotect, ctypes.byref
 
 print("[+] All done! Pyarmor bootstrap restrict mode disabled")
 ```
-If we put this code a in a file called restrict_bypass we can use it like the following, using the original `_pytransform.dll`
+If we put this code a in a file called `restrict_bypass.py` we can use it like the following, using the original `_pytransform.dll`
 ```py
 >>> import restrict_bypass
 [+] _pytransform.dll loaded at 0x70a00000
