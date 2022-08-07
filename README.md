@@ -1,5 +1,5 @@
 # PyArmor-Unpacker
-I decided it was time there was a proper PyArmor unpacker released. All the ones that currentently are public are either outdated, not working at all or only giving partial output. I plan on making this one support the latest version.
+I decided it was time that there was a proper PyArmor unpacker released. All the ones that currently are public are either outdated, not working at all or only giving partial output. I plan on making this one support the latest version of PyArmor.
 
 ## How to use it
 There are 3 different methods for unpacking PyArmor, in the methods folder in this repository you will find all the files needed for each method. Below you will find a detailed write-up on how I started all the way to the end product. I hope more people actually understand how it works this way rather than just using the tool. I recommend watching my YouTube series on [Python Reversing](https://www.youtube.com/playlist?list=PL7tLQ48v5ygquBfkhi4HRZSeMH0IT-Jw5) so you understand the basics.
@@ -190,6 +190,25 @@ If we put this code a in a file called `restrict_bypass.py` we can use it like t
 
 TODO: Give a full example of the first method
 
-Now I will show you the second method 
+The second method starts off the same as the first method, we inject the script which gets the current running code object.
+Only now the difference is that we won't just dump it, we will "fix" it. I mean by that removing pyarmor from it completely so that we get the original code object.
+Since PyArmor has multiple options when obfuscating I decided to add support for all the common ones.
+When it detects a script has `__armor_enter__` inside it it will modify it so that the code object returns right after the  `__armor_enter__` has been called.
+There are a few `NOP` opcodes following the function call so we just replace one of them with the `RETURN_VALUE` opcodes.
+# TODO: example of the return value opcode
+Because PyArmor edits the code object in memory the changes will stay even after we exit the code object.
+Now we can invoke (exec) the code object. We now have access to the decrypted code object. All that's left now is to remove the PyArmor modifications to the code object, that being the wrap header and footer. #TODO: reference docs and part of the source code 
+After that has been cleaned we have to remove the `__armor_enter__` and `__armor_exit__` from the `co_names`.
+We repeat this recursively for all code objects.
+The output will the original code object. It will be like pyarmor was never used.
+Because of this we can use all our favorite tools, for example decompyle3 to get the original source code. #TODO: reference repo
+
+The third method fixes the last issue with method #2.
+In method #2 we still have to actually run the program and inject it.
+This can be an issue because:
+- it's malware
+- the program exits instantly because of some anti debugging
+- any other case where you don't have enough time to inject 
+The third method attempts to statically unpack PyArmor, with which I mean without running anything of the obfuscated program.
 
 
