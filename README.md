@@ -4,13 +4,26 @@ I decided it was time that there was a proper PyArmor unpacker released. All the
 ## How to use it
 There are 3 different methods for unpacking PyArmor, in the methods folder in this repository you will find all the files needed for each method. Below you will find a detailed write-up on how I started all the way to the end product. I hope more people actually understand how it works this way rather than just using the tool. I recommend watching my YouTube series on [Python Reversing](https://www.youtube.com/playlist?list=PL7tLQ48v5ygquBfkhi4HRZSeMH0IT-Jw5) so you understand the basics.
 
-### Method 1
+## Known issues
+This is a list of all the know issues/missing features.
+I don't have enough time to fix them myself so I am heavily relying on contributors.
+
+Issues:
+- async code objects don't get invoked correctly -> programs like discord bots can't be unpacked
+- From Python 3.10 and higher the absolute jump indexes have been divided by 2 to save storage, we have to add support for that.
+
+Missing features:
+- multi file support
+- better logging
+- better prevention of accidentally executing the program for method #3
+
+### Method #1
 TODO
 
-### Method 2
+### Method #2
 TODO
 
-### Method 3
+### Method #3
 TODO
 
 ## Write-Up
