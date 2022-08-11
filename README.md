@@ -223,5 +223,18 @@ This can be an issue because:
 - the program exits instantly because of some anti debugging
 - any other case where you don't have enough time to inject 
 The third method attempts to statically unpack PyArmor, with which I mean without running anything of the obfuscated program.
+There are a few ways you could go about statically unpacking it but the method I will explain looks the easiest to implement without having to use other tools and/or languages.
+We will be using audit logs, audit logs were implemented in Python for security reasons. Now ironically we will be exploiting the audit logs to remove security. #TODO: reference docs to audit logs
+Audit logs essentially log internal CPython functions. Including `exec` and `marshal.loads`, both of which we can use to get the main obfuscated code object without having to inject/run the code. A full list of audit logs can be found [here](https://docs.python.org/3/library/audit_events.html#audit-events)
+CPython added something neat called audit hooks, every time an audit log is triggered it will do a callback to the hook we installed. The hook will simply be a function taking 2 arguments, `event`, `arg`.
+Example of an audit hook:
+```py
+import sys
+
+def hook(event, arg):
+    print(event, arg)
+
+sys.addaudithook(hook)
+```
 
 
