@@ -2,7 +2,7 @@
 I decided it was time that there was a proper PyArmor unpacker released. All the ones that currently are public are either outdated, not working at all or only giving partial output. I plan on making this one support the latest version of PyArmor.
 
 ## How to use it
-There are 3 different methods for unpacking PyArmor, in the methods folder in this repository you will find all the files needed for each method. Below you will find a detailed write-up on how I started all the way to the end product. I hope more people actually understand how it works this way rather than just using the tool. I recommend watching my YouTube series on [Python Reversing](https://www.youtube.com/playlist?list=PL7tLQ48v5ygquBfkhi4HRZSeMH0IT-Jw5) so you understand the basics.
+There are 3 different methods for unpacking PyArmor, in the methods folder in this repository you will find all the files needed for each method. Below you will find a detailed write-up on how I started all the way to the end product. I hope more people actually understand how it works this way rather than just using the tool.
 
 ## Known issues
 This is a list of all the know issues/missing features.
