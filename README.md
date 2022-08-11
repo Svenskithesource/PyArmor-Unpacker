@@ -9,13 +9,13 @@ This is a list of all the know issues/missing features.
 I don't have enough time to fix them myself so I am heavily relying on contributors.
 
 Issues:
-- async code objects don't get invoked correctly -> programs like discord bots can't be unpacked
+- Async code objects don't get invoked correctly -> programs like discord bots can't be unpacked
 - From Python 3.10 and higher the absolute jump indexes have been divided by 2 to save storage, we have to add support for that.
 
 Missing features:
-- multi file support
-- better logging
-- better prevention of accidentally executing the program for method #3
+- Multi file support
+- Better logging
+- Better prevention of accidentally executing the program for method #3
 
 ### Method #1
 TODO
