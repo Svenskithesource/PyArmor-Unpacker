@@ -239,5 +239,6 @@ def hook(event, arg):
 
 sys.addaudithook(hook)
 ```
-
-
+The only way to save code objects to disk is by marshalling it. This means PyArmor has to encrypt the marshalled code objects, so naturally they have to decrypt it when they want to access it in Python.
+They, like most other people, use the built in marshaller. The package is called `marshal` and it's a built-in package, written in C. It's one of the packages that has audit logs, so when PyArmor calls it we can see the arguments.
+The code object will still have encrypted bytecode, but we already managed to get past the first "layer", we can basically reuse our method #2 from this stage as it also has to deal with encrypted code objects. The only difference now is that every code object will be encrypted instead of the ones that would normally already have been ran, like the main code object.
