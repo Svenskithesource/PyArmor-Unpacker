@@ -16,7 +16,7 @@ Issues:
 - From Python 3.10 and higher the absolute jump indexes have been divided by 2 to save storage, we have to add support for that.
 
 Missing features:
-- Static unpacking for versions below 3.9
+- Static unpacking for versions below 3.9.7
 - Multi file support
 - Better logging
 - Better prevention of accidentally executing the program for method #3
@@ -39,7 +39,7 @@ If you don't you will face issues.
 4. In the `dumps` you can find the fully unpacked `.pyc` file.
 
 ### Method #3
-**NOTE: Don't use the static unpacker for anything below version 3.9, PyArmor uses a different method to get the code object in those versions so it will result in the obfuscated script being executed. Any contributors are welcome to add support**
+**NOTE: Don't use the static unpacker for anything below version 3.9.7, The `marshal.loads` audit log was only added in and after 3.9.7. Any contributors are welcome to add support**
 1. Copy all the files from the method #3 directory into the same directory as the file you want to unpack.
 2. In the terminal run this: `python3 bypass.py filename.py` (replace `filename.py` with the actual filename, obviously)
 3. In the `dumps` you can find the fully unpacked `.pyc` file.
