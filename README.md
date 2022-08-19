@@ -121,6 +121,7 @@ Now the reason that this is important is because a frame in Python is basically 
 So now we have figured out how to get the current running code object, we can simply walk up the callstack until we find the main module, which will be decrypted.<br/>
 Now we’ve pretty much figured out the main idea of how to unpack PyArmor. I’ll now show 3 methods of unpacking that I have personally found useful in different situations.
 
+### Method #1
 The first one requires you to inject Python code, so you’ll have to run the PyArmor script. When we dump the main code object like I explained above the main problem will be that some functions will still be encrypted, thus the first method invokes the PyArmor runtime function so that all the functions needed to decrypt the code objects are loaded, like `__armor_enter__` and `__armor_exit__`.<br/>
 This seems like a pretty simple thing to do but PyArmor did think of this, they implemented [a restrict mode](https://pyarmor.readthedocs.io/en/latest/mode.html?highlight=restrict#restrict-mode). You can specify this when compiling a PyArmor script, by default the restrict mode is 1.<br/>
 I haven’t tested every restrict mode out but it works for the default one.<br/>
@@ -136,7 +137,7 @@ If we open the `_pytransform.dll` in a native debugger, I chose x64dbg, we will 
 <img src="https://user-images.githubusercontent.com/40274381/179605917-a3f3544f-f8f4-4852-9735-ffdc248d244c.png" width="50%"/><br/>
 If we filter this now by searching for "bootstrap", we will get the following.<br/>
 <img src="https://user-images.githubusercontent.com/40274381/179606874-c01c4817-793f-4162-9180-db698ae5a607.png" width="50%"/><br/>
-When we watch the disassembly on the first search result you see that there is a reference of "_errno" indicating that there could be some error raised, a few lines below that we can see the error that we get in Python.<br/>
+When we watch the disassembly on the first search result you see that there is a reference of `_errno` indicating that there could be some error raised, a few lines below that we can see the error that we get in Python.<br/>
 <img src="https://user-images.githubusercontent.com/40274381/179607650-65743a16-0cea-4460-9679-646757061535.png"/><br/>
 When we just NOP everything from the point of the jump that jumps over the code that triggers the error to the return there is no way that the error could be raised.<br/>
 <img src="https://user-images.githubusercontent.com/40274381/179608107-6a864a9e-b79d-41ea-b1f4-e19c1dd68e84.png"/><br/>
@@ -202,6 +203,7 @@ If we put this code a in a file called `restrict_bypass.py` we can use it like t
 <built-in function __armor_exit__>
 ```
 
+### Method #2
 The second method starts off the same as the first method, we inject the script which gets the current running code object.<br/>
 Only now the difference is that we won't just dump it, we will "fix" it. By that I mean removing PyArmor from it completely so that we get the original code object.<br/>
 Since PyArmor has multiple options when obfuscating I decided to add support for all the common ones.<br/>
@@ -235,7 +237,7 @@ We repeat this recursively for all code objects.<br/>
 The output will be the original code object. It'll be like pyarmor was never applied.<br/>
 Because of this we can use all our favorite tools, for example [decompyle3](https://github.com/rocky/python-decompile3) to get the original source code.<br/>
 
-
+### Method #3
 The third method fixes the last issue with method #2.<br/>
 In method #2 we still have to actually run the program and inject it.<br/>
 This can be an issue because:<br/>
