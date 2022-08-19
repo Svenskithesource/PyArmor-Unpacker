@@ -9,6 +9,7 @@ This is a list of all the know issues/missing features.
 I don't have enough time to fix them myself so I am heavily relying on contributors.
 
 Issues:
+- Unsafe way of stopping the second marshal.loads trigger (see write-up)
 - Async code objects don't get invoked correctly -> programs like discord bots can't be unpacked
 - From Python 3.10 and higher the absolute jump indexes have been divided by 2 to save storage, we have to add support for that.
 
