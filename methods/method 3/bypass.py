@@ -286,7 +286,10 @@ def log(event, arg):
 sys.addaudithook(log)
 print("Hook installed")
 if input("Running the main entry file, continue? (y/n): ") == "y":
-    filename = "globylite.pyc"
+    filename = sys.argv.get(1)
+    if not filename:
+        print("Specify the filename. Ex: python3 bypass.py filename.py")
+        exit()
     file = open(filename, "rb" if filename.endswith("pyc") else "r")
     if filename.endswith("pyc"):
         file.seek(16)
