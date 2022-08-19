@@ -11,7 +11,7 @@ import marshal
 import sys,inspect,types
 import inspect
 import opcode
-
+import os, dis
 
 LOAD_GLOBAL = opcode.opmap["LOAD_GLOBAL"]
 RETURN_OPCODE = opcode.opmap["RETURN_VALUE"].to_bytes(2, byteorder='little') # Convert to bytes so it can be added to bytes easier later on
@@ -19,6 +19,7 @@ SETUP_FINALLY = opcode.opmap["SETUP_FINALLY"]
 EXTENDED_ARG = opcode.opmap["EXTENDED_ARG"]
 OPCODE_SIZE = 2 # can differ in older/newer versions
 JUMP_FORWARD = opcode.opmap["JUMP_FORWARD"]
+JUMP_ABSOLUTE = opcode.opmap["JUMP_ABSOLUTE"]
 # TODO more documentation
 
 code_attrs = [ # ordered correctly by types.CodeType type creation
@@ -53,8 +54,7 @@ def get_magic():
         return imp.get_magic()
 
 MAGIC_NUMBER = get_magic()
-DUMP_DIR = Path("./dump")
-DUMP_DIR.mkdir(exist_ok=True)
+
 
 started_exiting=False
 
@@ -101,6 +101,22 @@ def get_arg_bytes(co: bytes, op_code_index: int) -> bytearray:
 
 def calculate_arg(co: bytes, op_code_index: int) -> int:
     return int.from_bytes(get_arg_bytes(co, op_code_index), 'big')
+
+def calculate_extended_args(arg: int): # This function will calculate the necessary extended_args needed
+    extended_args = []
+    new_arg = arg
+    if arg > 255:
+        extended_arg = arg >> 8
+        while True:
+            if extended_arg > 255:
+                extended_arg -= 255
+                extended_args.append(255)
+            else:
+                extended_args.append(extended_arg)
+                break
+
+        new_arg = arg % 256
+    return extended_args, new_arg
 
 def handle_under_armor(obj: types.CodeType):
     # TODO make handling EXTENDED_ARG a function
@@ -164,6 +180,25 @@ def handle_armor_enter(obj: types.CodeType):
 
     raw_code = raw_code[try_start+2:]
     raw_code += RETURN_OPCODE # add return # TODO this adds return none to everything? what?
+
+    raw_code = bytearray(raw_code)
+    for i in range(0, len(raw_code), 2):
+        opcode = raw_code[i]
+        if opcode == JUMP_ABSOLUTE:
+            argument = calculate_arg(raw_code, i)
+
+            new_arg = argument - (try_start+2)
+            extended_args, new_arg = calculate_extended_args(new_arg)
+            for extended_arg in extended_args:
+                raw_code.insert(i, EXTENDED_ARG)
+                raw_code.insert(i+1, extended_arg)
+                i += 2
+
+            raw_code[i+1] = new_arg
+
+
+    raw_code = bytes(raw_code)
+
     return copy_code_obj(obj, co_names=names, co_code=raw_code)
 
 

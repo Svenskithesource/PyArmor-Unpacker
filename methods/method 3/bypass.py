@@ -21,6 +21,7 @@ SETUP_FINALLY = opcode.opmap["SETUP_FINALLY"]
 EXTENDED_ARG = opcode.opmap["EXTENDED_ARG"]
 OPCODE_SIZE = 2 # can differ in older/newer versions
 JUMP_FORWARD = opcode.opmap["JUMP_FORWARD"]
+JUMP_ABSOLUTE = opcode.opmap["JUMP_ABSOLUTE"]
 # TODO more documentation
 
 code_attrs = [ # ordered correctly by types.CodeType type creation
@@ -103,6 +104,22 @@ def get_arg_bytes(co: bytes, op_code_index: int) -> bytearray:
 def calculate_arg(co: bytes, op_code_index: int) -> int:
     return int.from_bytes(get_arg_bytes(co, op_code_index), 'big')
 
+def calculate_extended_args(arg: int): # This function will calculate the necessary extended_args needed
+    extended_args = []
+    new_arg = arg
+    if arg > 255:
+        extended_arg = arg >> 8
+        while True:
+            if extended_arg > 255:
+                extended_arg -= 255
+                extended_args.append(255)
+            else:
+                extended_args.append(extended_arg)
+                break
+
+        new_arg = arg % 256
+    return extended_args, new_arg
+
 def handle_under_armor(obj: types.CodeType):
     # TODO make handling EXTENDED_ARG a function
     i = find_first_opcode(obj.co_code, JUMP_FORWARD)
@@ -165,6 +182,25 @@ def handle_armor_enter(obj: types.CodeType):
 
     raw_code = raw_code[try_start+2:]
     raw_code += RETURN_OPCODE # add return # TODO this adds return none to everything? what?
+
+    raw_code = bytearray(raw_code)
+    for i in range(0, len(raw_code), 2):
+        opcode = raw_code[i]
+        if opcode == JUMP_ABSOLUTE:
+            argument = calculate_arg(raw_code, i)
+
+            new_arg = argument - (try_start+2)
+            extended_args, new_arg = calculate_extended_args(new_arg)
+            for extended_arg in extended_args:
+                raw_code.insert(i, EXTENDED_ARG)
+                raw_code.insert(i+1, extended_arg)
+                i += 2
+
+            raw_code[i+1] = new_arg
+
+
+    raw_code = bytes(raw_code)
+
     return copy_code_obj(obj, co_names=names, co_code=raw_code)
 
 
@@ -262,26 +298,30 @@ print("Initializing the hook")
 
 def log(event, arg):
     if event == "marshal.loads" and not os.path.exists("dump") and b"frozen" in arg[0]:
-        print("Hook triggered")
-        print("Creating dump folder")
-        DUMP_DIR = Path("./dump")
-        DUMP_DIR.mkdir(exist_ok=True)
-        print("Done, loading the encrypted code object")
-        code = marshal.loads(arg[0])
-        print("Code object successfully loaded, decrypting and removing pyarmor from it now")
-        code = output_code(code)
-        print("Successfully unpacked the file, saving to disk now")
-        filename = code.co_filename.replace("<frozen ", '').replace(">", '')
-        if filename.endswith(".pyc"):
-            pass
-        elif filename.endswith(".py"):
-            filename += 'c'
-        else:
-            filename += '.pyc'
+        try:
+            print("Hook triggered")
+            print("Creating dump folder")
+            DUMP_DIR = Path("./dump")
+            DUMP_DIR.mkdir(exist_ok=True)
+            print("Done, loading the encrypted code object")
+            code = marshal.loads(arg[0])
+            print("Code object successfully loaded, decrypting and removing pyarmor from it now")
+            code = output_code(code)
+            print("Successfully unpacked the file, saving to disk now")
+            filename = code.co_filename.replace("<frozen ", '').replace(">", '')
+            if filename.endswith(".pyc"):
+                pass
+            elif filename.endswith(".py"):
+                filename += 'c'
+            else:
+                filename += '.pyc'
 
-        marshal_to_pyc(DUMP_DIR/filename, code)
-        print("Saved, exiting now so the protected program doesn't run.")
-        os.kill(os.getpid(), 9)
+            marshal_to_pyc(DUMP_DIR/filename, code)
+            print("Saved, exiting now so the protected program doesn't run.")
+            os.kill(os.getpid(), 9)
+        except Exception as e:
+            print(e)
+            exit()
         
 sys.addaudithook(log)
 print("Hook installed")
