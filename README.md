@@ -46,9 +46,9 @@ If you don't you will face issues.
 Contributions are really important. I don't have enough time to fix all the issues listed above. Please contribute if you can.
 
 Donations are also really welcome:
-BTC - 37rq1xeB5q8ScmMKK3MVmD4RBe5FV7eMmh
-ETH - 0x28152666867856fa48b3924c185d7e1fb36f3b9a
-LTC - MFhdLRdzAqYGZxuvXQfM4RwVGbmrzmdzao
+BTC - 37rq1xeB5q8ScmMKK3MVmD4RBe5FV7eMmh<br/>
+ETH - 0x28152666867856fa48b3924c185d7e1fb36f3b9a<br/>
+LTC - MFhdLRdzAqYGZxuvXQfM4RwVGbmrzmdzao<br/>
 
 ## Write-Up
 This is the long-awaited write-up about the full process I went through to deobfuscate or rather unpack PyArmor, I will go through all the research I did and at the end give 3 methods for unpacking PyArmor, they are all unique and applicable in different situations. I want to mention I didn’t know a lot about Python internals so it took a lot longer for me than for other people with more experience in Python internals.<br/>
