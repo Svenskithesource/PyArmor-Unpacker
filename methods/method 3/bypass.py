@@ -286,7 +286,7 @@ def log(event, arg):
 sys.addaudithook(log)
 print("Hook installed")
 if input("Running the main entry file, continue? (y/n): ") == "y":
-    filename = sys.argv.get(1)
+    filename = sys.argv[1] if len(sys.argv) > 1 else None
     if not filename:
         print("Specify the filename. Ex: python3 bypass.py filename.py")
         exit()
