@@ -1,3 +1,7 @@
+# Method #2
+# By svenskithesource (https://github.com/Svenskithesource)
+# Made for (https://github.com/Svenskithesource/PyArmor-Unpacker)
+
 import subprocess
 from functools import wraps
 import typing

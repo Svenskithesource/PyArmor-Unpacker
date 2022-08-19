@@ -1,3 +1,7 @@
+# Method #3
+# By svenskithesource (https://github.com/Svenskithesource)
+# Made for (https://github.com/Svenskithesource/PyArmor-Unpacker)
+
 print("Preparing the unpacker...")
 
 import subprocess
