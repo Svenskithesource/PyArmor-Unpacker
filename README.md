@@ -300,4 +300,73 @@ exec(open(filename))
 Of course after we installed the audit hook.<br/>
 The problem I had was that the audit hook triggered on `marshal.loads`, but obviously after it had triggered I need to load the code object myself but that would just trigger it again so I added a check to see if the `dumps` directory exists. This is dangerous because if there is still a `dumps` folder left over from before it would just result it executing the protected script without stopping it. We have to find a better way to do that.<br/>
 
+**EDIT**: I recently discovered that I forgot about the part where we need to edit the absolute jumps. This part will cover that.<br/>
+When need to do this in both method #2 and method #3. When we remove the footer there will be no collions with the indexes.
+When we remove the header however it will cause the indexes to shift by the size of the header so we need to loop over all the absolute jumps and subtract the size of the header. That part is fairly easy.
+```py
+    for i in range(0, len(raw_code), 2):
+        opcode = raw_code[i]
+        if opcode == JUMP_ABSOLUTE:
+            argument = calculate_arg(raw_code, i)
 
+            new_arg = argument - (try_start+2)
+            extended_args, new_arg = calculate_extended_args(new_arg)
+            for extended_arg in extended_args:
+                raw_code.insert(i, EXTENDED_ARG)
+                raw_code.insert(i+1, extended_arg)
+                i += 2
+
+            raw_code[i+1] = new_arg
+```
+<sup>From [method #3]([https://github.com/call-042PE/PyInjector/blob/main/src/GetAllFunctions.py](https://github.com/Svenskithesource/PyArmor-Unpacker/blob/main/methods/method%203/bypass.py#L187))</sup><br/>
+We loop through the bytecode and check if the opcode is the `JUMP_ABSOLUTE` opcode. If it is we will calculate the argument (keeping the `EXTENDED_ARG` in mind). Then we take the `try_start` which is the size of the header (it's actually the index of the last opcode from the header, that's why we add 2) and subtract it from the argument of the `JUMP_ABSOLUTE` opcode.<br/>
+The hardest part of implementing this was taking care of the `EXTENDED_ARG` opcodes that we potentially have to add when the argument goes over the maximum size of 1 byte (255). We handle that in `calculate_extended_args`.<br/>
+```py
+def calculate_extended_args(arg: int): # This function will calculate the necessary extended_args needed
+    extended_args = []
+    new_arg = arg
+    if arg > 255:
+        extended_arg = arg >> 8
+        while True:
+            if extended_arg > 255:
+                extended_arg -= 255
+                extended_args.append(255)
+            else:
+                extended_args.append(extended_arg)
+                break
+
+        new_arg = arg % 256
+    return extended_args, new_arg
+```
+<sup>From [method #3]([https://github.com/call-042PE/PyInjector/blob/main/src/GetAllFunctions.py](https://github.com/Svenskithesource/PyArmor-Unpacker/blob/main/methods/method%203/bypass.py#L107))</sup><br/>
+To write this code I first had to understand how the `EXTENDED_ARG` worked exactly.<br/>
+[This article](https://towardsdatascience.com/understanding-python-bytecode-e7edaae8734d) helped a lot for understanding this opcode.<br/>
+An instruction in Python is 2 bytes in the more recent versions (3.6+). One byte is used for the opcode and one byte is for the argument. When we need to exceed one byte we use the `EXTENDED_ARG`. It basically works like this:
+```py
+arg = 300 # Let's say this is the size of our argument
+```
+We know the maximum allowed is 255 so we need to use EXTENDED_ARG, you would think it'd be like this:
+```py
+extended_arg = 255
+arg = 45
+```
+That's what I first assumed but after looking at the code that Python generated I noticed it was like this:
+```py
+extended_arg = 1
+arg = 44
+```
+I was very confused why it was like that since I saw no correlation between what I expected and the reality.The article linked above explained everything.<br/>
+Python handles the EXTENDED_ARG like following:
+```py
+extended_arg = extended_arg * 256
+```
+After seeing this everything was clear since it would mean that
+```py
+extended_arg = 1 * 256
+arg = 44
+
+print(extended_arg + arg)
+```
+Would output `300`.<br/>
+I applied that logic to the function so that it returns a list of the necessary EXTENDED_ARG opcodes and the new argument value (which would be under or equal to 255).<br/>
+I then just insert the EXTENDED_ARG at the correct index's.
