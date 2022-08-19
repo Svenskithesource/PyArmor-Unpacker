@@ -1,6 +1,8 @@
 # PyArmor-Unpacker
 I decided it was time that there was a proper PyArmor unpacker released. All the ones that currently are public are either outdated, not working at all or only giving partial output. I plan on making this one support the latest version of PyArmor.
 
+Please star the repository if you found it helpful. I'd really appreciate it.
+
 ## How to use it
 There are 3 different methods for unpacking PyArmor, in the methods folder in this repository you will find all the files needed for each method. Below you will find a detailed write-up on how I started all the way to the end product. I hope more people actually understand how it works this way rather than just using the tool.
 
@@ -39,6 +41,14 @@ If you don't you will face issues.
 1. Copy all the files from the method #3 directory into the same directory as the file you want to unpack.
 2. In the terminal run this: `python3 bypass.py filename.py` (replace `filename.py` with the actual filename, obviously)
 3. In the `dumps` you can find the fully unpacked `.pyc` file.
+
+## Contribute
+Contributions are really important. I don't have enough time to fix all the issues listed above. Please contribute if you can.
+
+Donations are also really welcome:
+BTC - 37rq1xeB5q8ScmMKK3MVmD4RBe5FV7eMmh
+ETH - 0x28152666867856fa48b3924c185d7e1fb36f3b9a
+LTC - MFhdLRdzAqYGZxuvXQfM4RwVGbmrzmdzao
 
 ## Write-Up
 This is the long-awaited write-up about the full process I went through to deobfuscate or rather unpack PyArmor, I will go through all the research I did and at the end give 3 methods for unpacking PyArmor, they are all unique and applicable in different situations. I want to mention I didn’t know a lot about Python internals so it took a lot longer for me than for other people with more experience in Python internals.<br/>
