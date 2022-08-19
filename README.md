@@ -5,7 +5,7 @@ I decided it was time that there was a proper PyArmor unpacker released. All the
 There are 3 different methods for unpacking PyArmor, in the methods folder in this repository you will find all the files needed for each method. Below you will find a detailed write-up on how I started all the way to the end product. I hope more people actually understand how it works this way rather than just using the tool.
 
 ## Known issues
-This is a list of all the know issues/missing features.
+This is a list of all the known issues/missing features.
 I don't have enough time to fix them myself so I am heavily relying on contributors.
 
 Issues:
@@ -67,7 +67,7 @@ dist
 ```
 The `__init__.py` file doesn’t have to do much with decrypting the code objects. It is mostly used so that we can import the module.
 It does some checks like what OS you're using, if you’d like to read it, it’s open source so you can just open it like a normal Python script.<br/>
-The most important thing it does is loading the `_pytransform.dll` and exposing it’s functions to the Python interpreter’s globals. In all the scripts we can see that from pytransform it imports pyarmor_runtime.
+The most important thing it does is loading the `_pytransform.dll` and exposing its functions to the Python interpreter’s globals. In all the scripts we can see that from pytransform it imports pyarmor_runtime.
 ```py
 from pytransform import pyarmor_runtime
 pyarmor_runtime()
@@ -106,11 +106,11 @@ GetAllFunctions()
 <sup>From [call-042PE's repository](https://github.com/call-042PE/PyInjector/blob/main/src/GetAllFunctions.py)</sup><br/>
 In the code you can see he added a comment saying the problem he has is that he can’t access the main module code object.<br/>
 After a lot of Googling I was stumped, unable to find anything about how to get the current running code's object. Sometime later in an unrelated project I saw a function call to `sys._getframe()`. I did some research on [what it does](https://docs.python.org/3/library/sys.html#sys._getframe), it gets the current running frame.<br/>
-You can give an integer as an argument which will walk up the callstack and get the frame at a specific index.
+You can give an integer as an argument which will walk up the call stack and get the frame at a specific index.
 ```py
 sys._getframe(1) # get the caller's frame
 ```
-Now the reason that this is important is because a frame in Python is basically just a code object but with more information about it’s state in memory. To get the code object from a frame we can use the .f_code attribute, you will also be familiar with this if you have created a custom CPython version which dumps the code objects that get executed as we also get the code object from a frame there.
+Now the reason that this is important is because a frame in Python is basically just a code object but with more information about its state in memory. To get the code object from a frame we can use the .f_code attribute, you will also be familiar with this if you have created a custom CPython version which dumps the code objects that get executed as we also get the code object from a frame there.
 ```c
 ...
 1443    tstate->frame = frame;
@@ -118,7 +118,7 @@ Now the reason that this is important is because a frame in Python is basically 
 ...
 ```
 <sup>From [my custom CPython version](https://github.com/Svenskithesource/cpython/blob/main/Python/ceval.c#L1443)</sup><br/>
-So now we have figured out how to get the current running code object, we can simply walk up the callstack until we find the main module, which will be decrypted.<br/>
+So now we have figured out how to get the current running code object, we can simply walk up the call stack until we find the main module, which will be decrypted.<br/>
 Now we’ve pretty much figured out the main idea of how to unpack PyArmor. I’ll now show 3 methods of unpacking that I have personally found useful in different situations.
 
 ### Method #1
@@ -150,7 +150,7 @@ Now if we save this and replace the `_pytransform.dll` you will see that when we
 >>> __armor_exit__
 <built-in function __armor_exit__>
 ```
-Now this is quite tiring if we have to do this for every PyArmor scrip that we want to unpack, so `extremecoders` made a script that NOPS the specific addresses in memory in Python.
+Now this is quite tiring if we have to do this for every PyArmor script that we want to unpack, so `extremecoders` made a script that NOPS the specific addresses in memory in Python.
 ```py
 # Credit to extremecoders (https://forum.tuts4you.com/profile/79240-extreme-coders/) for writing the script
 # Credit to me for adding the comments explaining it
@@ -273,5 +273,5 @@ Now the better method I found is that PyArmor's restrict mode doesn't check if t
 exec(open(filename))
 ```
 Of course after we installed the audit hook.<br/>
-The problem I had was that the audit hook triggered on `marshal.loads`, but obviously after it had triggered I need to load the code object myself but that would just trigger it again so I added a check to see if the `dumps` directory exists. This is dangerous because if there is still a `dumps` folder left over from before it would just result it executing the protected script without stopping it. We have to find a better way to do that.<br/>
+The problem I had was that the audit hook triggered on `marshal.loads`, but obviously after it had triggered I needed to load the code object myself but that would just trigger it again so I added a check to see if the `dumps` directory exists. This is dangerous because if there is still a `dumps` folder left over from before it would just result in executing the protected script without stopping it. We have to find a better way to do that.<br/>
 
