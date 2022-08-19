@@ -18,14 +18,27 @@ Missing features:
 - Better logging
 - Better prevention of accidentally executing the program for method #3
 
+## How to use
+**IMPORTANT: USE THE SAME PYTHON VERSION EVERYWHERE, LOOK AT WHAT THE PROGRAM YOU ARE UNPACKING IS COMPILED WITH.**
+If you don't you will face issues.
+
 ### Method #1
-TODO
+1. Copy all the files from the method #1 directory into the same directory as the file you want to unpack.
+2. Run the file you want to unpack
+3. Use an injector (I recommend [Process Hacker 2](https://processhacker.sourceforge.io/)) to inject https://github.com/call-042PE/PyInjector (Choose the x64 or x86 version based on your application)
+4. Run the `method_1.py` file
+5. Now you can run the partially unpacked program using `run.py`
 
 ### Method #2
-TODO
+1. Copy all the files from the method #2 directory into the same directory as the file you want to unpack.
+2. Run the file you want to unpack
+3. Use an injector (I recommend [Process Hacker 2](https://processhacker.sourceforge.io/)) to inject https://github.com/call-042PE/PyInjector (Choose the x64 or x86 version based on your application)
+4. In the `dumps` you can find the fully unpacked `.pyc` file.
 
 ### Method #3
-TODO
+1. Copy all the files from the method #3 directory into the same directory as the file you want to unpack.
+2. In the terminal run this: `python3 bypass.py filename.py` (replace `filename.py` with the actual filename, obviously)
+3. In the `dumps` you can find the fully unpacked `.pyc` file.
 
 ## Write-Up
 This is the long-awaited write-up about the full process I went through to deobfuscate or rather unpack PyArmor, I will go through all the research I did and at the end give 3 methods for unpacking PyArmor, they are all unique and applicable in different situations. I want to mention I didn’t know a lot about Python internals so it took a lot longer for me than for other people with more experience in Python internals.<br/>
