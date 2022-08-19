@@ -201,36 +201,53 @@ If we put this code a in a file called `restrict_bypass.py` we can use it like t
 <built-in function __armor_exit__>
 ```
 
-TODO: Give a full example of the first method
-
 The second method starts off the same as the first method, we inject the script which gets the current running code object.<br/>
-Only now the difference is that we won't just dump it, we will "fix" it. By that I mean removing pyarmor from it completely so that we get the original code object.<br/>
+Only now the difference is that we won't just dump it, we will "fix" it. By that I mean removing PyArmor from it completely so that we get the original code object.<br/>
 Since PyArmor has multiple options when obfuscating I decided to add support for all the common ones.<br/>
 When it detects a script has `__armor_enter__` inside it it will modify it so that the code object returns right after the  `__armor_enter__` has been called.<br/>
-There are a few `NOP` opcodes following the function call so we just replace one of them with the `RETURN_VALUE` opcodes.<br/>
-# TODO: example of the return value opcode
+There is a `POP_TOP` opcode following the function call, this is used so that the return value of the function is removed from the stack, we just replace it with the `RETURN_VALUE` opcode so that we can get the return value of the `__armor_enter__` function and so that we have the decrypted code object in memory without actually running the original bytecode. See the example below<br/>
+```py
+  1           0 JUMP_ABSOLUTE           18
+              2 NOP
+              4 NOP
+        >>    6 POP_BLOCK
+
+  3           8 <53>
+             10 NOP
+             12 NOP
+             14 NOP
+
+  7          16 JUMP_ABSOLUTE           82
+        >>   18 LOAD_GLOBAL              5 (__armor_enter__)
+             20 CALL_FUNCTION            0
+             22 POP_TOP  # we change this to RETURN_VALUE
+
+  9          24 NOP
+             26 NOP
+             28 NOP
+             30 SETUP_FINALLY           50 (to 82)
+```
 Because PyArmor edits the code object in memory the changes will stay even after we exit the code object.<br/>
-Now we can invoke (exec) the code object. We now have access to the decrypted code object. All that's left now is to remove the PyArmor modifications to the code object, that being the wrap header and footer. #TODO: reference docs and part of the source code<br/>
+Now we can invoke (exec) the code object. We now have access to the decrypted code object. All that's left now is to remove the [PyArmor modifications to the code object](https://pyarmor.readthedocs.io/en/latest/how-to-do.html#how-to-obfuscate-python-scripts), that being the wrap header and footer. <br/>
 After that has been cleaned we have to remove the `__armor_enter__` and `__armor_exit__` from the `co_names`.<br/>
 We repeat this recursively for all code objects.<br/>
-The output will the original code object. It will be like pyarmor was never used.<br/>
-Because of this we can use all our favorite tools, for example decompyle3 to get the original source code. #TODO: reference repo<br/>
-#TODO: add more code snippets to the write-up for the second method
+The output will be the original code object. It'll be like pyarmor was never applied.<br/>
+Because of this we can use all our favorite tools, for example [decompyle3](https://github.com/rocky/python-decompile3) to get the original source code.<br/>
 
 
-The third method fixes the last issue with method #2.
-In method #2 we still have to actually run the program and inject it.
-This can be an issue because:
+The third method fixes the last issue with method #2.<br/>
+In method #2 we still have to actually run the program and inject it.<br/>
+This can be an issue because:<br/>
 - it's malware
 - the program exits instantly because of some anti debugging
 - any other case where you don't have enough time to inject 
 
-The third method attempts to statically unpack PyArmor, with which I mean without running anything of the obfuscated program.
-There are a few ways you could go about statically unpacking it but the method I will explain looks the easiest to implement without having to use other tools and/or languages.
-We will be using audit logs, audit logs were implemented in Python for security reasons. Now ironically we will be exploiting the audit logs to remove security. #TODO: reference docs to audit logs
-Audit logs essentially log internal CPython functions. Including `exec` and `marshal.loads`, both of which we can use to get the main obfuscated code object without having to inject/run the code. A full list of audit logs can be found [here](https://docs.python.org/3/library/audit_events.html#audit-events)
-CPython added something neat called audit hooks, every time an audit log is triggered it will do a callback to the hook we installed. The hook will simply be a function taking 2 arguments, `event`, `arg`.
-Example of an audit hook:
+The third method attempts to statically unpack PyArmor, with which I mean without running anything of the obfuscated program.<br/>
+There are a few ways you could go about statically unpacking it but the method I will explain looks the easiest to implement without having to use other tools and/or languages.<br/>
+We will be using [audit logs](https://docs.python.org/3/library/sys.html#sys.audit), audit logs were implemented in Python for security reasons. Now ironically we will be exploiting the audit logs to remove security.<br/>
+Audit logs essentially log internal CPython functions. Including `exec` and `marshal.loads`, both of which we can use to get the main obfuscated code object without having to inject/run the code. A full list of audit logs can be found [here](https://docs.python.org/3/library/audit_events.html#audit-events)<br/>
+CPython added something neat called [audit hooks](https://docs.python.org/3/library/sys.html#sys.addaudithook), every time an audit log is triggered it will do a callback to the hook we installed. The hook will simply be a function taking 2 arguments, `event`, `arg`.<br/>
+Example of an audit hook:<br/>
 ```py
 import sys
 
@@ -239,6 +256,19 @@ def hook(event, arg):
 
 sys.addaudithook(hook)
 ```
-The only way to save code objects to disk is by marshalling it. This means PyArmor has to encrypt the marshalled code objects, so naturally they have to decrypt it when they want to access it in Python.
-They, like most other people, use the built in marshaller. The package is called `marshal` and it's a built-in package, written in C. It's one of the packages that has audit logs, so when PyArmor calls it we can see the arguments.
-The code object will still have encrypted bytecode, but we already managed to get past the first "layer", we can basically reuse our method #2 from this stage as it also has to deal with encrypted code objects. The only difference now is that every code object will be encrypted instead of the ones that would normally already have been ran, like the main code object.
+The only way to save code objects to disk is by marshalling it. This means PyArmor has to encrypt the marshalled code objects, so naturally they have to decrypt it when they want to access it in Python.<br/>
+They, like most other people, use the built-in marshaller. The package is called `marshal` and it's a built-in package, written in C. It's one of the packages that has audit logs, so when PyArmor calls it we can see the arguments.<br/>
+The code object will still have encrypted bytecode, but we already managed to get past the first "layer", we can basically re-use our method #2 from this stage as it also has to deal with encrypted code objects. The only difference now is that every code object will be encrypted instead of the ones that would normally already have been ran, like the main code object.<br/>
+Because in method #2 we inject the code we already have access to all the PyArmor functions like `__armor_enter__` and `__armor_exit__`. Since we try to unpack it statically we don't have that luxury.<br/>
+As I mentioned above PyArmor has restrict modes, I already showed how to bypass the bootstrap restrict mode since that only gets triggered when we run the `pyarmor_runtime()` function.<br/>
+Now we need to run the whole obfuscated file, which includes the `__pyarmor__` call. That function triggers another restrict mode so we have to bypass that. First I was thinking that we use a similar method by patching it natively.<br/>
+A friend helped with that, these are the steps you can do to repeat it. Keep in mind I found a better and easier method.
+PyArmor checks if the PYARMOR string is present at a specific memory address in `__main__`. We need to patch this check. See the image below
+<img src="https://media.discordapp.net/attachments/984728907666300948/997534104264396890/unknown.png"/><br/>
+Now the better method I found is that PyArmor's restrict mode doesn't check if the main file is directly ran by Python or if it was invoked, so we can simply do this:
+```py
+exec(open(filename))
+```
+Of course after we installed the audit hook.<br/>
+The problem I had was that the audit hook triggered on marshal.loads, but obviously after it had triggered I need to load the code object myself but that would just trigger it again so I added a check to see if the `dumps` directory exists. This is dangerous because if there is still a `dumps` folder left over from before it would just result it executing the protected script without stopping it. We have to find a better way to do that.<br/>
+
