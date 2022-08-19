@@ -271,5 +271,5 @@ Now the better method I found is that PyArmor's restrict mode doesn't check if t
 exec(open(filename))
 ```
 Of course after we installed the audit hook.<br/>
-The problem I had was that the audit hook triggered on marshal.loads, but obviously after it had triggered I need to load the code object myself but that would just trigger it again so I added a check to see if the `dumps` directory exists. This is dangerous because if there is still a `dumps` folder left over from before it would just result it executing the protected script without stopping it. We have to find a better way to do that.<br/>
+The problem I had was that the audit hook triggered on `marshal.loads`, but obviously after it had triggered I need to load the code object myself but that would just trigger it again so I added a check to see if the `dumps` directory exists. This is dangerous because if there is still a `dumps` folder left over from before it would just result it executing the protected script without stopping it. We have to find a better way to do that.<br/>
 
