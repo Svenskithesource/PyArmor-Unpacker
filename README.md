@@ -16,6 +16,7 @@ Issues:
 - From Python 3.10 and higher the absolute jump indexes have been divided by 2 to save storage, we have to add support for that.
 
 Missing features:
+- Unit tests
 - Static unpacking for versions below 3.9.7
 - Multi file support
 - Better logging
