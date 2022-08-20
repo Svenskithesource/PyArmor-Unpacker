@@ -50,7 +50,7 @@ If you don't you will face issues.
 ## Contribute
 Contributions are really important. I don't have enough time to fix all the issues listed above. Please contribute if you can.
 
-Donations are also really welcome:
+Donations are also really welcome:<br/>
 BTC - 37rq1xeB5q8ScmMKK3MVmD4RBe5FV7eMmh<br/>
 ETH - 0x28152666867856fa48b3924c185d7e1fb36f3b9a<br/>
 LTC - MFhdLRdzAqYGZxuvXQfM4RwVGbmrzmdzao<br/>
