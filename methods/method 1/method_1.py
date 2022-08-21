@@ -7,6 +7,8 @@ import opcode, types, marshal
 RETURN_OPCODE = opcode.opmap["RETURN_VALUE"].to_bytes(2, byteorder='little') # Convert to bytes so it can be added to bytes easier later on
 SETUP_FINALLY = opcode.opmap["SETUP_FINALLY"]
 EXTENDED_ARG = opcode.opmap["EXTENDED_ARG"]
+LOAD_GLOBAL = opcode.opmap["LOAD_GLOBAL"]
+JUMP_ABSOLUTE = opcode.opmap["JUMP_ABSOLUTE"]
 
 def find_first_opcode(co: bytes, op_code: int):
     for i in range(0, len(co), 2):
@@ -55,6 +57,33 @@ def handle_armor_enter(obj: types.CodeType):
 
     raw_code = raw_code[try_start+2:]
     raw_code += RETURN_OPCODE # add return # TODO this adds return none to everything? what?
+
+    load_exit_function = b''.join(i.to_bytes(1, byteorder='big') for i in [LOAD_GLOBAL, obj.co_names.index("__armor_exit__")])
+    fake_exit = obj.co_code.find(load_exit_function) - 2
+    
+
+    raw_code = bytearray(raw_code)
+    for i in range(0, len(raw_code), 2):
+        op = raw_code[i]
+        if op == JUMP_ABSOLUTE:
+            argument = calculate_arg(raw_code, i)
+
+            if argument == fake_exit:
+                raw_code[i] = opcode.opmap["RETURN_VALUE"] # Got to use this because the variable is converted to bytes
+                continue
+
+            new_arg = argument - (try_start+2)
+            extended_args, new_arg = calculate_extended_args(new_arg)
+            for extended_arg in extended_args:
+                raw_code.insert(i, EXTENDED_ARG)
+                raw_code.insert(i+1, extended_arg)
+                i += 2
+
+            raw_code[i+1] = new_arg
+
+
+    raw_code = bytes(raw_code)
+
     return obj.replace(co_code=raw_code)
 
 
