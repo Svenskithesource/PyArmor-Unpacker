@@ -162,6 +162,10 @@ def handle_armor_enter(obj: types.CodeType):
 
     load_enter_function = b''.join(i.to_bytes(1, byteorder='big') for i in [LOAD_GLOBAL, obj.co_names.index("__armor_enter__")])
     pop_top_start = obj.co_code.find(load_enter_function) + 4
+
+    load_exit_function = b''.join(i.to_bytes(1, byteorder='big') for i in [LOAD_GLOBAL, obj.co_names.index("__armor_exit__")])
+    fake_exit = obj.co_code.find(load_exit_function) - 2
+    
     new_code = obj.co_code[:pop_top_start] + RETURN_OPCODE + obj.co_code[pop_top_start+2:] # replace the pop_top after __pyarmor_enter__ to return
     obj = copy_code_obj(obj, co_code=new_code)
 
@@ -183,9 +187,13 @@ def handle_armor_enter(obj: types.CodeType):
 
     raw_code = bytearray(raw_code)
     for i in range(0, len(raw_code), 2):
-        opcode = raw_code[i]
-        if opcode == JUMP_ABSOLUTE:
+        op = raw_code[i]
+        if op == JUMP_ABSOLUTE:
             argument = calculate_arg(raw_code, i)
+
+            if argument == fake_exit:
+                raw_code[i] = opcode.opmap["RETURN_VALUE"] # Got to use this because the variable is converted to bytes
+                continue
 
             new_arg = argument - (try_start+2)
             extended_args, new_arg = calculate_extended_args(new_arg)
@@ -200,6 +208,7 @@ def handle_armor_enter(obj: types.CodeType):
     raw_code = bytes(raw_code)
 
     return copy_code_obj(obj, co_names=names, co_code=raw_code)
+
 
 
 
