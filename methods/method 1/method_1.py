@@ -8,7 +8,18 @@ RETURN_OPCODE = opcode.opmap["RETURN_VALUE"].to_bytes(2, byteorder='little') # C
 SETUP_FINALLY = opcode.opmap["SETUP_FINALLY"]
 EXTENDED_ARG = opcode.opmap["EXTENDED_ARG"]
 LOAD_GLOBAL = opcode.opmap["LOAD_GLOBAL"]
-JUMP_ABSOLUTE = opcode.opmap["JUMP_ABSOLUTE"]
+
+# All absolute jumps
+JUMP_ABSOLUTE = opcode.opmap.get("JUMP_ABSOLUTE")
+CONTINUE_LOOP = opcode.opmap.get("CONTINUE_LOOP")
+POP_JUMP_IF_FALSE = opcode.opmap.get("POP_JUMP_IF_FALSE")
+POP_JUMP_IF_TRUE = opcode.opmap.get("POP_JUMP_IF_TRUE")
+JUMP_IF_FALSE_OR_POP = opcode.opmap.get("JUMP_IF_FALSE_OR_POP")
+JUMP_IF_TRUE_OR_POP = opcode.opmap.get("JUMP_IF_TRUE_OR_POP")
+
+absolute_jumps = [JUMP_ABSOLUTE, CONTINUE_LOOP, POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE, JUMP_IF_FALSE_OR_POP, JUMP_IF_TRUE_OR_POP]
+
+double_jump = True if sys.version_info.major == 3 and sys.version_info.minor >= 10 else False
 
 def find_first_opcode(co: bytes, op_code: int):
     for i in range(0, len(co), 2):
@@ -65,8 +76,10 @@ def handle_armor_enter(obj: types.CodeType):
     raw_code = bytearray(raw_code)
     for i in range(0, len(raw_code), 2):
         op = raw_code[i]
-        if op == JUMP_ABSOLUTE:
+        if op in absolute_jumps:
             argument = calculate_arg(raw_code, i)
+
+            if double_jump: argument *= 2
 
             if argument == fake_exit:
                 raw_code[i] = opcode.opmap["RETURN_VALUE"] # Got to use this because the variable is converted to bytes
@@ -76,10 +89,10 @@ def handle_armor_enter(obj: types.CodeType):
             extended_args, new_arg = calculate_extended_args(new_arg)
             for extended_arg in extended_args:
                 raw_code.insert(i, EXTENDED_ARG)
-                raw_code.insert(i+1, extended_arg)
+                raw_code.insert(i+1, extended_arg if not double_jump else extended_arg//2)
                 i += 2
 
-            raw_code[i+1] = new_arg
+            raw_code[i+1] = new_arg if not double_jump else new_arg//2
 
 
     raw_code = bytes(raw_code)
