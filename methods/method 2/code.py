@@ -19,7 +19,16 @@ SETUP_FINALLY = opcode.opmap["SETUP_FINALLY"]
 EXTENDED_ARG = opcode.opmap["EXTENDED_ARG"]
 OPCODE_SIZE = 2 # can differ in older/newer versions
 JUMP_FORWARD = opcode.opmap["JUMP_FORWARD"]
-JUMP_ABSOLUTE = opcode.opmap["JUMP_ABSOLUTE"]
+
+# All absolute jumps
+JUMP_ABSOLUTE = opcode.opmap.get("JUMP_ABSOLUTE")
+CONTINUE_LOOP = opcode.opmap.get("CONTINUE_LOOP")
+POP_JUMP_IF_FALSE = opcode.opmap.get("POP_JUMP_IF_FALSE")
+POP_JUMP_IF_TRUE = opcode.opmap.get("POP_JUMP_IF_TRUE")
+JUMP_IF_FALSE_OR_POP = opcode.opmap.get("JUMP_IF_FALSE_OR_POP")
+JUMP_IF_TRUE_OR_POP = opcode.opmap.get("JUMP_IF_TRUE_OR_POP")
+
+absolute_jumps = [JUMP_ABSOLUTE, CONTINUE_LOOP, POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE, JUMP_IF_FALSE_OR_POP, JUMP_IF_TRUE_OR_POP]
 # TODO more documentation
 
 code_attrs = [ # ordered correctly by types.CodeType type creation
@@ -44,6 +53,7 @@ code_attrs = [ # ordered correctly by types.CodeType type creation
 if sys.version_info.major < 3 or (sys.version_info.major == 3 and sys.version_info.minor < 8):
     code_attrs.remove('co_posonlyargcount')
 
+double_jump = True if sys.version_info.major == 3 and sys.version_info.minor >= 10 else False
 
 def get_magic():
     if sys.version_info >= (3,4):
@@ -57,6 +67,22 @@ MAGIC_NUMBER = get_magic()
 
 
 started_exiting=False
+
+def calculate_extended_args(arg: int): # This function will calculate the necessary extended_args needed
+    extended_args = []
+    new_arg = arg
+    if arg > 255:
+        extended_arg = arg >> 8
+        while True:
+            if extended_arg > 255:
+                extended_arg -= 255
+                extended_args.append(255)
+            else:
+                extended_args.append(extended_arg)
+                break
+
+        new_arg = arg % 256
+    return extended_args, new_arg
 
 def execute_code_obj(obj:types.CodeType):    
     def a():
@@ -122,6 +148,7 @@ def handle_under_armor(obj: types.CodeType):
     # TODO make handling EXTENDED_ARG a function
     i = find_first_opcode(obj.co_code, JUMP_FORWARD)
     jumping_arg = calculate_arg(obj.co_code, i)
+    if double_jump: jumping_arg *= 2
     pop_index = jumping_arg + 6
     obj = copy_code_obj(obj, co_code=obj.co_code[:pop_index] + RETURN_OPCODE + obj.co_code[pop_index+2:])
     
@@ -180,6 +207,7 @@ def handle_armor_enter(obj: types.CodeType):
     try_start = find_first_opcode(obj.co_code, SETUP_FINALLY)
 
     size = calculate_arg(obj.co_code, try_start)
+    if double_jump: size *= 2
     raw_code = raw_code[:try_start+size]
 
     raw_code = raw_code[try_start+2:]
@@ -188,8 +216,10 @@ def handle_armor_enter(obj: types.CodeType):
     raw_code = bytearray(raw_code)
     for i in range(0, len(raw_code), 2):
         op = raw_code[i]
-        if op == JUMP_ABSOLUTE:
+        if op in absolute_jumps:
             argument = calculate_arg(raw_code, i)
+
+            if double_jump: argument *= 2
 
             if argument == fake_exit:
                 raw_code[i] = opcode.opmap["RETURN_VALUE"] # Got to use this because the variable is converted to bytes
@@ -199,16 +229,15 @@ def handle_armor_enter(obj: types.CodeType):
             extended_args, new_arg = calculate_extended_args(new_arg)
             for extended_arg in extended_args:
                 raw_code.insert(i, EXTENDED_ARG)
-                raw_code.insert(i+1, extended_arg)
+                raw_code.insert(i+1, extended_arg if not double_jump else extended_arg//2)
                 i += 2
 
-            raw_code[i+1] = new_arg
+            raw_code[i+1] = new_arg if not double_jump else new_arg//2
 
 
     raw_code = bytes(raw_code)
 
     return copy_code_obj(obj, co_names=names, co_code=raw_code)
-
 
 
 
