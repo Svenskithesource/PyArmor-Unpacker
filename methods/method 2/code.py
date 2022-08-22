@@ -348,4 +348,7 @@ if __name__ == "__main__":
     else:
         filename += '.pyc'
 
+    DUMP_DIR = Path("./dump")
+    DUMP_DIR.mkdir(exist_ok=True)
+
     marshal_to_pyc(DUMP_DIR/filename, code)
