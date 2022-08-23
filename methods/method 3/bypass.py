@@ -346,6 +346,16 @@ def log(event, arg):
                 filename += '.pyc'
 
             marshal_to_pyc(DUMP_DIR/filename, code)
+
+            for file in os.listdir():
+                if file.endswith(".py") or file.endswith(".pyc"):
+                    if not os.path.exists(os.path.join("dump", os.path.splitext(file)[0] + ".pyc")) and b"__pyarmor__" in open(file, "rb").read() and os.path.abspath(file) != __file__:
+                        multi_file = input("More PyArmor protected files found, also unpack? (y/n): ")
+                        if multi_file == "y":
+                            globals()["triggered"] = False
+                            print("Unpacking", file)
+                            exec(open(file, "r").read() if file.endswith(".py") else marshal.loads(open(file, "rb").read()))
+
             print("Saved, exiting now so the protected program doesn't run.")
             os.kill(os.getpid(), 9)
         except Exception as e:
