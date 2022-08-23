@@ -14,6 +14,7 @@ import sys,inspect,types
 import inspect
 import opcode
 import os, dis
+import traceback
 
 LOAD_GLOBAL = opcode.opmap["LOAD_GLOBAL"]
 RETURN_OPCODE = opcode.opmap["RETURN_VALUE"].to_bytes(2, byteorder='little') # Convert to bytes so it can be added to bytes easier later on
@@ -345,8 +346,8 @@ def log(event, arg):
             print("Saved, exiting now so the protected program doesn't run.")
             os.kill(os.getpid(), 9)
         except Exception as e:
-            print(e)
-            exit()
+            print(traceback.format_exc())
+            os.kill(os.getpid(), 9)
         
 sys.addaudithook(log)
 print("Hook installed")
