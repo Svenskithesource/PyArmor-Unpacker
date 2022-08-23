@@ -74,7 +74,8 @@ def handle_armor_enter(obj: types.CodeType):
     
 
     raw_code = bytearray(raw_code)
-    for i in range(0, len(raw_code), 2):
+    i = 0
+    while i < len(raw_code):
         op = raw_code[i]
         if op in absolute_jumps:
             argument = calculate_arg(raw_code, i)
@@ -86,7 +87,9 @@ def handle_armor_enter(obj: types.CodeType):
                 continue
 
             new_arg = argument - (try_start+2)
+
             extended_args, new_arg = calculate_extended_args(new_arg)
+
             for extended_arg in extended_args:
                 raw_code.insert(i, EXTENDED_ARG)
                 raw_code.insert(i+1, extended_arg if not double_jump else extended_arg//2)
@@ -94,6 +97,7 @@ def handle_armor_enter(obj: types.CodeType):
 
             raw_code[i+1] = new_arg if not double_jump else new_arg//2
 
+        i += 2
 
     raw_code = bytes(raw_code)
 
