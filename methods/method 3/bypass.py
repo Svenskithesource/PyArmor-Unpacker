@@ -322,9 +322,12 @@ def marshal_to_pyc(file_path:typing.Union[str, Path], code:types.CodeType):
 print("Preparation completed")
 print("Initializing the hook")
 
+triggered = False
+
 def log(event, arg):
-    if event == "marshal.loads" and not os.path.exists("dump") and b"frozen" in arg[0]:
+    if event == "marshal.loads" and not globals()["triggered"] and b"frozen" in arg[0]: # We have to use globals() because we're inside an audit hook
         try:
+            globals()["triggered"] = True
             print("Hook triggered")
             print("Creating dump folder")
             DUMP_DIR = Path("./dump")
