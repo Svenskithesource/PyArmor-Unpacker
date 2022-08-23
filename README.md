@@ -18,9 +18,9 @@ Issues:
 Missing features:
 - Unit tests
 - Static unpacking for versions below 3.9.7
-- Multi file support
+- ~Multi file support~ Fixed by [issue #11](https://github.com/Svenskithesource/PyArmor-Unpacker/issues/11)
 - Better logging
-- Better prevention of accidentally executing the program for method #3
+- ~Better prevention of accidentally executing the program for method #3~ Fixed by [issue #9](https://github.com/Svenskithesource/PyArmor-Unpacker/issues/9)
 
 ## How to use
 **IMPORTANT: USE THE SAME PYTHON VERSION EVERYWHERE, LOOK AT WHAT THE PROGRAM YOU ARE UNPACKING IS COMPILED WITH.**
