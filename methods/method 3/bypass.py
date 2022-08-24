@@ -134,16 +134,19 @@ def calculate_extended_args(arg: int): # This function will calculate the necess
 def handle_under_armor(obj: types.CodeType):
     # TODO make handling EXTENDED_ARG a function
     i = find_first_opcode(obj.co_code, JUMP_FORWARD)
-    jumping_arg = calculate_arg(obj.co_code, i)
+    jumping_arg = i + calculate_arg(obj.co_code, i)
     if double_jump: jumping_arg *= 2
-    pop_index = jumping_arg + 6
+
+    load_armor = jumping_arg + find_first_opcode(obj.co_code[jumping_arg:], LOAD_GLOBAL)
+
+    pop_index = load_armor + 4
+
     obj = copy_code_obj(obj, co_code=obj.co_code[:pop_index] + RETURN_OPCODE + obj.co_code[pop_index+2:])
-    
+
     try:
         execute_code_obj(obj)
     except Exception as e:
         print(e)
-
     new_names = tuple(n for n in obj.co_names if n!= "__armor__")
     return copy_code_obj(obj, co_code=obj.co_code[:jumping_arg], co_names=new_names)
 
