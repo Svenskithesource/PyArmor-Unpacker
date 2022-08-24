@@ -184,13 +184,15 @@ def handle_armor_enter(obj: types.CodeType):
     fake_exit = obj.co_code.find(load_exit_function) - 2
     
     new_code = obj.co_code[:pop_top_start] + RETURN_OPCODE + obj.co_code[pop_top_start+2:] # replace the pop_top after __pyarmor_enter__ to return
-    obj = copy_code_obj(obj, co_code=new_code)
+    old_freevars = obj.co_freevars
+    obj = copy_code_obj(obj, co_code=new_code, co_freevars=())
 
     try:
         execute_code_obj(obj)
     except Exception as e:
         print(e)
 
+    obj = obj.replace(co_freevars=old_freevars)
     names = tuple(n for n in obj.co_names if not n.startswith('__armor')) # remove the pyarmor functions
     raw_code = obj.co_code
 
