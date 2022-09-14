@@ -143,7 +143,7 @@ def handle_under_armor(obj: types.CodeType):
 
     obj = copy_code_obj(obj, co_code=obj.co_code[:pop_index] + RETURN_OPCODE + obj.co_code[pop_index+2:])
     old_freevars = obj.co_freevars
-    obj = copy_code_obj(obj, co_code=new_code, co_freevars=())
+    obj = copy_code_obj(obj, co_freevars=())
 
     try:
         execute_code_obj(obj)
