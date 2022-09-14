@@ -142,11 +142,16 @@ def handle_under_armor(obj: types.CodeType):
     pop_index = load_armor + 4
 
     obj = copy_code_obj(obj, co_code=obj.co_code[:pop_index] + RETURN_OPCODE + obj.co_code[pop_index+2:])
+    old_freevars = obj.co_freevars
+    obj = copy_code_obj(obj, co_code=new_code, co_freevars=())
 
     try:
         execute_code_obj(obj)
     except Exception as e:
         print(e)
+
+    obj = obj.replace(co_freevars=old_freevars)
+
     new_names = tuple(n for n in obj.co_names if n!= "__armor__")
     return copy_code_obj(obj, co_code=obj.co_code[:jumping_arg], co_names=new_names)
 
