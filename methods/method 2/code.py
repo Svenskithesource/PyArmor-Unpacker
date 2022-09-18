@@ -163,7 +163,7 @@ def handle_under_armor(obj: types.CodeType):
     except Exception as e:
         print(e)
 
-    obj = obj.replace(co_freevars=old_freevars)
+    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars)
 
     new_names = tuple(n for n in obj.co_names if n!= "__armor__")
     return copy_code_obj(obj, co_code=obj.co_code[:jumping_arg], co_names=new_names)
@@ -210,7 +210,7 @@ def handle_armor_enter(obj: types.CodeType):
     except Exception as e:
         print(e)
 
-    obj = obj.replace(co_freevars=old_freevars)
+    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars)
     names = tuple(n for n in obj.co_names if not n.startswith('__armor')) # remove the pyarmor functions
     raw_code = obj.co_code
 
@@ -347,7 +347,7 @@ def marshal_to_pyc(file_path:typing.Union[str, Path], code:types.CodeType):
 
 if __name__ == "__main__":
     for frame in sys._current_frames().values(): # Loop all the threads running in the process
-        if "frozen" in frame.f_code.co_filename: # Find the correct thread (when injecting this code it also creates a new thread so we need to find the main one)
+        if "frozen" in frame.f_code.co_filename or "tkinter" in frame.f_code.co_filename: # Find the correct thread (when injecting this code it also creates a new thread so we need to find the main one)
             while frame.f_back.f_back != None: # NOTE the frame before None is the obfuscated one
                 frame = frame.f_back # Keep going one frame back until we find the main frame (see NOTE above on how we identify it)
             code = frame.f_code
