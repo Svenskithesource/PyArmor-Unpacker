@@ -2,9 +2,11 @@
 # By svenskithesource (https://github.com/Svenskithesource)
 # Made for (https://github.com/Svenskithesource/PyArmor-Unpacker)
 
-import opcode, types, marshal, sys
+import opcode, types, marshal, sys, inspect
+from functools import wraps
 
-RETURN_OPCODE = opcode.opmap["RETURN_VALUE"].to_bytes(2, byteorder='little')  # Convert to bytes so it can be added to bytes easier later on
+RETURN_OPCODE = opcode.opmap["RETURN_VALUE"].to_bytes(2,
+                                                      byteorder='little')  # Convert to bytes so it can be added to bytes easier later on
 SETUP_FINALLY = opcode.opmap["SETUP_FINALLY"]
 EXTENDED_ARG = opcode.opmap["EXTENDED_ARG"]
 LOAD_GLOBAL = opcode.opmap["LOAD_GLOBAL"]
@@ -22,6 +24,24 @@ absolute_jumps = [JUMP_ABSOLUTE, CONTINUE_LOOP, POP_JUMP_IF_FALSE, POP_JUMP_IF_T
 
 double_jump = True if sys.version_info.major == 3 and sys.version_info.minor >= 10 else False
 
+code_attrs = [  # ordered correctly by types.CodeType type creation
+    "co_argcount",
+    "co_posonlyargcount",
+    "co_kwonlyargcount",
+    "co_nlocals",
+    "co_stacksize",
+    "co_flags",
+    "co_code",
+    "co_consts",
+    "co_names",
+    "co_varnames",
+    "co_filename",
+    "co_name",
+    "co_firstlineno",
+    "co_lnotab",
+    "co_freevars",
+    "co_cellvars",
+]
 
 def find_first_opcode(co: bytes, op_code: int):
     for i in range(0, len(co), 2):
@@ -48,7 +68,7 @@ def calculate_arg(co: bytes, op_code_index: int) -> int:
     return int.from_bytes(get_arg_bytes(co, op_code_index), 'big')
 
 
-def calculate_extended_args(arg: int): # This function will calculate the necessary extended_args needed
+def calculate_extended_args(arg: int):  # This function will calculate the necessary extended_args needed
     extended_args = []
     new_arg = arg
     if arg > 255:
@@ -63,6 +83,7 @@ def calculate_extended_args(arg: int): # This function will calculate the necess
 
         new_arg = arg % 256
     return extended_args, new_arg
+
 
 def output_code(obj):
     if isinstance(obj, types.CodeType):
@@ -121,7 +142,63 @@ def handle_armor_enter(obj: types.CodeType):
 
     raw_code = bytes(raw_code)
 
-    return obj.replace(co_code=raw_code)
+    return copy_code_obj(obj, co_code=raw_code)
+
+
+def orig_or_new(func):
+    sig = inspect.signature(func)
+    kwarg_params = list(sig.parameters.keys())
+
+    @wraps(func)
+    def wrapee(orig, **kwargs):
+        binding = sig.bind_partial(**kwargs)
+        new_kwargs = binding.arguments
+        for k in kwarg_params:
+            if k not in new_kwargs:
+                new_kwargs[k] = getattr(orig, k)
+        return func(**new_kwargs)
+
+    # add the original_object to the signature of the function
+    orig_params = list(sig.parameters.values())
+    orig_params.insert(0, inspect.Parameter("original_object", inspect.Parameter.POSITIONAL_ONLY))
+    sig.replace(parameters=orig_params)
+    wrapee.__signature__ = sig
+    return wrapee
+
+
+def array_to_params(names_array):
+    return [inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None) for name in names_array]
+
+
+def sig_from_array(names_array):
+    def decor(f):
+        sig = inspect.Signature(parameters=array_to_params(names_array))
+
+        @wraps(f)
+        def wrappe(**kwargs):
+            bound = sig.bind(**kwargs)
+            bound.apply_defaults()
+            return f(**bound.kwargs)
+
+        wrappe.__signature__ = sig
+        return wrappe
+
+    return decor
+
+
+@orig_or_new
+@sig_from_array(code_attrs)
+def copy_code_obj(
+        **kwargs
+):
+    """
+    create a copy of code object with different paramters.
+    If a parameter is None then the default is the previous code object values
+    """
+    args = [kwargs[name] for name in code_attrs]
+    return types.CodeType(
+        *args
+    )
 
 
 code = marshal.loads(open("dumped.marshal", "rb").read())
