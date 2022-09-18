@@ -135,13 +135,17 @@ def handle_under_armor(obj: types.CodeType):
     # TODO make handling EXTENDED_ARG a function
     i = find_first_opcode(obj.co_code, JUMP_FORWARD)
     jumping_arg = i + calculate_arg(obj.co_code, i)
-    if double_jump: jumping_arg *= 2
+    if double_jump:
+        jumping_arg *= 2
 
     load_armor = jumping_arg + find_first_opcode(obj.co_code[jumping_arg:], LOAD_GLOBAL)
 
     pop_index = load_armor + 4
 
-    obj = copy_code_obj(obj, co_code=obj.co_code[:pop_index] + RETURN_OPCODE + obj.co_code[pop_index+2:])
+    obj = copy_code_obj(
+        obj,
+        co_code=obj.co_code[:pop_index] + RETURN_OPCODE + obj.co_code[pop_index + 2 :],
+    )
     old_freevars = obj.co_freevars
     obj = copy_code_obj(obj, co_freevars=())
 
@@ -150,9 +154,9 @@ def handle_under_armor(obj: types.CodeType):
     except Exception as e:
         print(e)
 
-    obj = obj.replace(co_freevars=old_freevars)
+    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars)
 
-    new_names = tuple(n for n in obj.co_names if n!= "__armor__")
+    new_names = tuple(n for n in obj.co_names if n != "__armor__")
     return copy_code_obj(obj, co_code=obj.co_code[:jumping_arg], co_names=new_names)
 
 def output_code(obj):
@@ -182,13 +186,21 @@ def output_code(obj):
 
 def handle_armor_enter(obj: types.CodeType):
 
-    load_enter_function = b''.join(i.to_bytes(1, byteorder='big') for i in [LOAD_GLOBAL, obj.co_names.index("__armor_enter__")])
+    load_enter_function = b"".join(
+        i.to_bytes(1, byteorder="big")
+        for i in [LOAD_GLOBAL, obj.co_names.index("__armor_enter__")]
+    )
     pop_top_start = obj.co_code.find(load_enter_function) + 4
 
-    load_exit_function = b''.join(i.to_bytes(1, byteorder='big') for i in [LOAD_GLOBAL, obj.co_names.index("__armor_exit__")])
+    load_exit_function = b"".join(
+        i.to_bytes(1, byteorder="big")
+        for i in [LOAD_GLOBAL, obj.co_names.index("__armor_exit__")]
+    )
     fake_exit = obj.co_code.find(load_exit_function) - 2
-    
-    new_code = obj.co_code[:pop_top_start] + RETURN_OPCODE + obj.co_code[pop_top_start+2:] # replace the pop_top after __pyarmor_enter__ to return
+
+    new_code = (
+        obj.co_code[:pop_top_start] + RETURN_OPCODE + obj.co_code[pop_top_start + 2 :]
+    )  # replace the pop_top after __pyarmor_enter__ to return
     old_freevars = obj.co_freevars
     obj = copy_code_obj(obj, co_code=new_code, co_freevars=())
 
@@ -197,18 +209,23 @@ def handle_armor_enter(obj: types.CodeType):
     except Exception as e:
         print(e)
 
-    obj = obj.replace(co_freevars=old_freevars)
-    names = tuple(n for n in obj.co_names if not n.startswith('__armor')) # remove the pyarmor functions
+    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars)
+    names = tuple(
+        n for n in obj.co_names if not n.startswith("__armor")
+    )  # remove the pyarmor functions
     raw_code = obj.co_code
 
     try_start = find_first_opcode(obj.co_code, SETUP_FINALLY)
 
     size = calculate_arg(obj.co_code, try_start)
-    if double_jump: size *= 2
-    raw_code = raw_code[:try_start+size]
+    if double_jump:
+        size *= 2
+    raw_code = raw_code[: try_start + size]
 
-    raw_code = raw_code[try_start+2:]
-    raw_code += RETURN_OPCODE # add return # TODO this adds return none to everything? what?
+    raw_code = raw_code[try_start + 2 :]
+    raw_code += (
+        RETURN_OPCODE  # add return # TODO this adds return none to everything? what?
+    )
 
     raw_code = bytearray(raw_code)
     i = 0
@@ -217,24 +234,30 @@ def handle_armor_enter(obj: types.CodeType):
         if op in absolute_jumps:
             argument = calculate_arg(raw_code, i)
 
-            if double_jump: argument *= 2
+            if double_jump:
+                argument *= 2
 
             if argument == fake_exit:
-                raw_code[i] = opcode.opmap["RETURN_VALUE"] # Got to use this because the variable is converted to bytes
+                raw_code[i] = opcode.opmap[
+                    "RETURN_VALUE"
+                ]  # Got to use this because the variable is converted to bytes
                 continue
 
-            new_arg = argument - (try_start+2)
+            new_arg = argument - (try_start + 2)
 
             extended_args, new_arg = calculate_extended_args(new_arg)
 
             for extended_arg in extended_args:
                 raw_code.insert(i, EXTENDED_ARG)
-                raw_code.insert(i+1, extended_arg if not double_jump else extended_arg//2)
+                raw_code.insert(
+                    i + 1, extended_arg if not double_jump else extended_arg // 2
+                )
                 i += 2
 
-            raw_code[i+1] = new_arg if not double_jump else new_arg//2
+            raw_code[i + 1] = new_arg if not double_jump else new_arg // 2
 
         i += 2
+
     raw_code = bytes(raw_code)
 
     return copy_code_obj(obj, co_names=names, co_code=raw_code)
