@@ -12,7 +12,7 @@ I don't have enough time to fix them myself so I am heavily relying on contribut
 
 Issues:
 - Unsafe way of stopping the second marshal.loads trigger (see write-up)
-- Async code objects don't get invoked correctly -> programs like discord bots can't be unpacked
+- ~Async code objects don't get invoked correctly -> programs like discord bots can't be unpacked~ Fixed by [issue #19](https://github.com/Svenskithesource/PyArmor-Unpacker/issues/19)
 - ~From Python 3.10 and higher the absolute jump indexes have been divided by 2 to save storage, we have to add support for that.~ Fixed by [issue #3](https://github.com/Svenskithesource/PyArmor-Unpacker/issues/3)
 
 Missing features:
