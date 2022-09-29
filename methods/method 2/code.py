@@ -176,6 +176,30 @@ def calculate_extended_args(
     return extended_args, new_arg
 
 
+def get_flags(flags):
+    names = []
+    for i in range(32):
+        flag = 1<<i
+        if flags & flag:
+            names.append(flag)
+            flags ^= flag
+            if not flags:
+                break
+
+    return names
+
+def flag_to_num(flags, exclude=[]):
+    real = 0
+    for flag in flags:
+        if flag not in exclude:
+            real ^= flag
+
+    return real
+
+def remove_async(flags: int) -> int:
+    flag_lst = get_flags(flags)
+    return flag_to_num(flag_lst, [128, 256, 512]) # all coroutine flags
+
 def handle_under_armor(obj: types.CodeType):
     # TODO make handling EXTENDED_ARG a function
     i = find_first_opcode(obj.co_code, JUMP_FORWARD)
@@ -192,14 +216,16 @@ def handle_under_armor(obj: types.CodeType):
         co_code=obj.co_code[:pop_index] + RETURN_OPCODE + obj.co_code[pop_index + 2 :],
     )
     old_freevars = obj.co_freevars
-    obj = copy_code_obj(obj, co_freevars=())
+    old_flags = obj.co_flags
+
+    obj = copy_code_obj(obj, co_freevars=(), co_flags=remove_async(old_flags))
 
     try:
         execute_code_obj(obj)
     except Exception as e:
         print(e)
 
-    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars)
+    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars, co_flags=old_flags)
 
     new_names = tuple(n for n in obj.co_names if n != "__armor__")
     return copy_code_obj(obj, co_code=obj.co_code[:jumping_arg], co_names=new_names)
@@ -249,14 +275,16 @@ def handle_armor_enter(obj: types.CodeType):
         obj.co_code[:pop_top_start] + RETURN_OPCODE + obj.co_code[pop_top_start + 2 :]
     )  # replace the pop_top after __pyarmor_enter__ to return
     old_freevars = obj.co_freevars
-    obj = copy_code_obj(obj, co_code=new_code, co_freevars=())
+    old_flags = obj.co_flags
+
+    obj = copy_code_obj(obj, co_code=new_code, co_freevars=(), co_flags=remove_async(old_flags))
 
     try:
         execute_code_obj(obj)
     except Exception as e:
         print(e)
 
-    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars)
+    obj = copy_code_obj(obj, co_code=obj.co_code, co_freevars=old_freevars, co_flags=old_flags)
     names = tuple(
         n for n in obj.co_names if not n.startswith("__armor")
     )  # remove the pyarmor functions
