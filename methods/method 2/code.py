@@ -309,6 +309,13 @@ def handle_armor_enter(obj: types.CodeType):
         if op in absolute_jumps:
             argument = calculate_arg(raw_code, i)
 
+            while raw_code[i-2] == EXTENDED_ARG: # Remove the preceding extended arguments, we add our custom ones later on
+                raw_code.pop(i-2) # opcode
+                raw_code.pop(i-2) # arguments
+
+                i -= 2
+                op = raw_code[i]
+
             if double_jump:
                 argument *= 2
 
