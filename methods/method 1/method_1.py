@@ -69,19 +69,30 @@ def calculate_arg(co: bytes, op_code_index: int) -> int:
 
 
 def calculate_extended_args(arg: int):  # This function will calculate the necessary extended_args needed
+    """
+    EXTENDED_ARG logic:
+    - Its opcode shifts left by 8, and adds it to the next opcode
+    - There are a maximum of 3 EXTENDED_ARGs for one opcode because
+      the first of those will be shifted 3 times for a total of
+      24 bits shifted. This fits exactly in the 32-bit integer boundaries.
+    """
     extended_args = []
     new_arg = arg
     if arg > 255:
         extended_arg = arg >> 8
         while True:
             if extended_arg > 255:
-                extended_arg -= 255
-                extended_args.append(255)
+                extended_args.append(extended_arg & 255)
+                extended_arg >>= 8
             else:
                 extended_args.append(extended_arg)
+                extended_args.reverse() # reverse because we appended in the order
+                                        # of most recent EXTENDED_ARG (the one closest to
+                                        # the actual opcode) to the least recent EXTENDED_ARG
+                                        # (the one farthest from the actual opcode)
                 break
 
-        new_arg = arg % 256
+        new_arg = arg & 255
     return extended_args, new_arg
 
 
