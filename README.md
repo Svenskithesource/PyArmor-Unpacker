@@ -43,7 +43,7 @@ If you don't you will face issues.
 ### Method #3
 **NOTE: Don't use the static unpacker for anything below version 3.9.7, The `marshal.loads` audit log was only added in and after 3.9.7. Any contributors are welcome to add support**
 1. Copy all the files from the method #3 directory into the same directory as the file you want to unpack.
-2. In the terminal run this: `python3 bypass.py filename.py` (replace `filename.py` with the actual filename, obviously)
+2. In the terminal run this: `python3 bypass.py filename.pyc` (replace `filename.pyc` with the actual filename, obviously)
 3. In the `dumps` directory you can find the fully unpacked `.pyc` file.
 4. (Optional) Use a decompiler to get the Python source back, since currently 3.9.7 is the minimum version you will have to use: https://github.com/zrax/pycdc
 
