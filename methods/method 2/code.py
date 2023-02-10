@@ -167,26 +167,6 @@ def get_arg_bytes(co: bytes, op_code_index: int) -> bytearray:
 def calculate_arg(co: bytes, op_code_index: int) -> int:
     return int.from_bytes(get_arg_bytes(co, op_code_index), "big")
 
-
-def calculate_extended_args(
-    arg: int,
-):  # This function will calculate the necessary extended_args needed
-    extended_args = []
-    new_arg = arg
-    if arg > 255:
-        extended_arg = arg >> 8
-        while True:
-            if extended_arg > 255:
-                extended_arg -= 255
-                extended_args.append(255)
-            else:
-                extended_args.append(extended_arg)
-                break
-
-        new_arg = arg % 256
-    return extended_args, new_arg
-
-
 def get_flags(flags):
     names = []
     for i in range(32):
