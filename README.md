@@ -1,4 +1,5 @@
 # PyArmor-Unpacker
+## NOTE: This unpacker does not support PyArmor v8+ yet
 I decided it was time that there was a proper PyArmor unpacker released. All the ones that currently are public are either outdated, not working at all or only giving partial output. I plan on making this one support the latest version of PyArmor.
 
 Please star the repository if you found it helpful. I'd really appreciate it.
