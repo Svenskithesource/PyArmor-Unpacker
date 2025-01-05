@@ -404,10 +404,32 @@ def marshal_to_pyc(file_path:typing.Union[str, Path], code:types.CodeType):
     pyc_code = code_to_bytecode(code)
     with open(file_path, 'wb') as f:
         f.write(pyc_code)
+
 print("Preparation completed")
 print("Initializing the hook")
 
 triggered = False
+current_dir_scanned = False
+
+def find_modules(directory):
+    for filename in os.listdir(directory):
+        if os.path.isdir(filename):
+            find_modules(os.path.join(directory, filename))
+
+        elif filename.endswith(".py") or filename.endswith(".pyc"):
+            path = os.path.join(directory, filename)
+            if not os.path.exists(os.path.join("dump", os.path.join(directory, os.path.splitext(filename)[0] + ".pyc"))) and b"__pyarmor__" in open(path, "rb").read() and os.path.abspath(path) != os.path.abspath(__file__):
+                multi_file = input(f"More PyArmor protected files found ({path}), also unpack? (y/n): ")
+                if multi_file == "y":
+                    globals()["triggered"] = False
+                    print("Unpacking", path)
+                    file = open(path, "rb")
+                    if filename.endswith("pyc"):
+                        file.seek(16)
+                        code = marshal.loads(file.read())
+                    else:
+                        code = file.read()
+                    exec(code)
 
 def log(event, arg):
     if event == "marshal.loads" and not globals()["triggered"] and b"frozen" in arg[0]: # We have to use globals() because we're inside an audit hook
@@ -430,25 +452,21 @@ def log(event, arg):
             else:
                 filename += '.pyc'
 
-            marshal_to_pyc(DUMP_DIR/filename, code)
+            curr_dir = DUMP_DIR
+            for directory in filename.split(".")[:-2]:
+                curr_dir = curr_dir / directory
+                curr_dir.mkdir(exist_ok=True)
 
-            for filename in os.listdir():
-                if filename.endswith(".py") or filename.endswith(".pyc"):
-                    if not os.path.exists(os.path.join("dump", os.path.splitext(filename)[0] + ".pyc")) and b"__pyarmor__" in open(filename, "rb").read() and os.path.abspath(filename) != __file__:
-                        multi_file = input("More PyArmor protected files found, also unpack? (y/n): ")
-                        if multi_file == "y":
-                            globals()["triggered"] = False
-                            print("Unpacking", filename)
-                            file = open(filename, "rb")
-                            if filename.endswith("pyc"):
-                                file.seek(16)
-                                code = marshal.loads(file.read())
-                            else:
-                                code = file.read()
-                            exec(code)
+            filename = ".".join(filename.split(".")[-2:])
 
-            print("Saved, exiting now so the protected program doesn't run.")
-            os.kill(os.getpid(), 9)
+            marshal_to_pyc(curr_dir/filename, code)
+
+            if not globals()["current_dir_scanned"]:
+                find_modules(".")
+                globals()["current_dir_scanned"] = True
+
+                print("Saved, exiting now so the protected program doesn't run.")
+                os.kill(os.getpid(), 9)
         except Exception as e:
             print(traceback.format_exc())
             os.kill(os.getpid(), 9)
