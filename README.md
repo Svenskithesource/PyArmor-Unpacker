@@ -10,6 +10,7 @@ There are 3 different methods for unpacking PyArmor, in the methods folder in th
 ## Known issues
 This is a list of all the known issues/missing features.
 I don't have enough time to fix them myself so I heavily rely on contributors.
+
 Issues:
 - ~Unsafe way of stopping the second marshal.loads trigger (see write-up)~ Fixed by [issue #9](https://github.com/Svenskithesource/PyArmor-Unpacker/issues/9)
 - ~Async code objects don't get invoked correctly -> programs like discord bots can't be unpacked~ Fixed by [issue #19](https://github.com/Svenskithesource/PyArmor-Unpacker/issues/19)
