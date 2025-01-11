@@ -1,15 +1,15 @@
 # PyArmor-Unpacker
 ## NOTE: This unpacker does not support PyArmor v8+ yet
-I decided it was time that there was a proper PyArmor unpacker released. All the ones that currently are public are either outdated, not working at all or only giving partial output. I plan on making this one support the latest version of PyArmor.
+I decided it was time to release a proper PyArmor unpacker. All the ones that currently are public are either outdated, not working at all or only giving partial output. I plan on making this one support the latest version of PyArmor.
 
-Please star the repository if you found it helpful. I'd really appreciate it.
+Please star the repository if you found it helpful. I would really appreciate it.
 
 ## How to use it
 There are 3 different methods for unpacking PyArmor, in the methods folder in this repository you will find all the files needed for each method. Below you will find a detailed write-up on how I started all the way to the end product. I hope more people actually understand how it works this way rather than just using the tool.
 
 ## Known issues
 This is a list of all the known issues/missing features.
-I don't have enough time to fix them myself so I am heavily relying on contributors.
+I don't have enough time to fix them myself so I heavily rely on contributors.
 
 Issues:
 - ~Unsafe way of stopping the second marshal.loads trigger (see write-up)~ Fixed by [issue #9](https://github.com/Svenskithesource/PyArmor-Unpacker/issues/9)
@@ -25,7 +25,7 @@ Missing features:
 
 ## How to use
 **IMPORTANT: USE THE SAME PYTHON VERSION EVERYWHERE, LOOK AT WHAT THE PROGRAM YOU ARE UNPACKING IS COMPILED WITH.**
-If you don't you will face issues.
+If you don't, you will face issues.
 
 ### Method #1
 1. Copy all the files from the method #1 directory into the same directory as the file you want to unpack.
